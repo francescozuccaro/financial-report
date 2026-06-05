@@ -1,46 +1,48 @@
 # Daily Financial Report
 
-Un programma Python che scarica dati di mercato in tempo reale da Yahoo Finance,
-calcola indicatori tecnici e genera segnali di investimento nel terminale.
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-## Cosa fa
+A Python tool that fetches real-time market data from Yahoo Finance, computes technical indicators, and generates BUY/SELL/HOLD investment signals directly in the terminal.
 
-- Scarica i prezzi aggiornati di S&P 500, NASDAQ, Dow Jones, VIX e mercati emergenti
-- Calcola SMA20 (media mobile 20 giorni) e RSI (indice di forza relativa)
-- Genera segnali **BUY / SELL / HOLD** basati su regole trasparenti
-- Stampa il report nel terminale con colori
+## What it does
 
-## Struttura del progetto
+- Downloads live prices for S&P 500, NASDAQ, Dow Jones, VIX and Emerging Markets
+- Computes SMA20 (20-day simple moving average) and RSI (relative strength index)
+- Generates transparent BUY / SELL / HOLD signals based on clear rules
+- Prints a color-coded report in the terminal
 
-```
-financial-report/
-├── main.py          # punto di ingresso — esegui questo
-├── fetcher.py       # scarica dati da Yahoo Finance e calcola SMA20/RSI
-├── signals.py       # logica BUY/SELL/HOLD
-└── requirements.txt # dipendenze
-```
+## Project structure
 
-## Come eseguirlo
+    financial-report/
+    ├── main.py          # entry point — run this
+    ├── fetcher.py       # fetches data from Yahoo Finance and computes SMA20/RSI
+    ├── signals.py       # BUY/SELL/HOLD logic
+    └── requirements.txt # dependencies
 
-```bash
-# 1. Crea l'ambiente virtuale e installa le dipendenze
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
+## How to run it
 
-# 2. Avvia il programma
-python main.py
-```
+    # 1. Create virtual environment and install dependencies
+    python -m venv .venv
+    .venv\Scripts\activate
+    pip install -r requirements.txt
 
-## Logica dei segnali
+    # 2. Run the program
+    python main.py
 
-| Segnale | Condizione |
-|---------|-----------|
-| **BUY** | Prezzo ≥ 3% sotto SMA20 **e** RSI < 40 |
-| **SELL** | Prezzo ≥ 4% sopra SMA20 **e** RSI > 70 — oppure VIX > 30 |
-| **HOLD** | Tutto il resto |
+## Signal logic
 
-## Tecnologie usate
+| Signal | Condition |
+|--------|-----------|
+| BUY  | Price ≥ 3% below SMA20 and RSI < 40 |
+| SELL | Price ≥ 4% above SMA20 and RSI > 70 — or VIX > 30 |
+| HOLD | Everything else |
 
-- [yfinance](https://github.com/ranaroussi/yfinance) — dati di mercato
-- [pandas](https://pandas.pydata.org/) — calcolo indicatori tecnici
+## Technologies
+
+- [yfinance](https://github.com/ranaroussi/yfinance) — market data
+- [pandas](https://pandas.pydata.org/) — technical indicator computation
+
+## Author
+
+Built by Francesco Zuccaro — Computer Engineering student at Politecnico di Milano, interested in computer science and data-driven tools.
