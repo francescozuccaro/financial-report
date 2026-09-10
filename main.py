@@ -1,132 +1,149 @@
-"""
-main.py — Punto di ingresso del programma.
-
-Esegui con:   python main.py
-
-Flusso completo:
-  1. fetcher.get_dati_mercato()  → scarica prezzi e indicatori da Yahoo Finance
-  2. signals.genera_segnali()    → calcola BUY / SELL / HOLD per ogni area
-  3. stampa_report()             → mostra tutto in modo leggibile nel terminale
-"""
-
-import logging
 from datetime import datetime
 
-from fetcher import get_dati_mercato
+from fetcher import MERCATI, get_dati_mercato
 from signals import genera_segnali
 
-# Livello INFO: mostra solo messaggi importanti, non il debug interno
-logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
-
-# ── Colori ANSI ────────────────────────────────────────────────────────────────
-# I terminali moderni supportano i codici ANSI per colorare il testo.
-# Formato: "\033[CODICEm" per attivare, "\033[0m" per resettare.
-VERDE    = "\033[92m"
-ROSSO    = "\033[91m"
-GIALLO   = "\033[93m"
-GRIGIO   = "\033[90m"
+VERDE = "\033[92m"
+ROSSO = "\033[91m"
+GIALLO = "\033[93m"
+GRIGIO = "\033[90m"
 GRASSETTO = "\033[1m"
-RESET    = "\033[0m"
+RESET = "\033[0m"
 
-# Colore associato a ogni azione
-COLORE_AZIONE = {
-    "BUY":  VERDE,
+COLORI_SEGNALI = {
+    "BUY": VERDE,
     "SELL": ROSSO,
     "HOLD": GIALLO,
 }
 
 
-def stampa_report(dati: dict, segnali: list[dict]) -> None:
-    """
-    Stampa il report completo nel terminale.
+def scegli_mercati() -> list[str]:
 
-    Sezioni:
-      1. Intestazione con data e ora
-      2. Tabella dei prezzi di mercato
-      3. Segnali di investimento con motivazione
-      4. Disclaimer
-    """
-    ora_attuale = datetime.now().strftime("%d/%m/%Y  %H:%M")
+    print(f"\n{GRASSETTO}DAILY FINANCIAL REPORT{RESET}")
+    print("\nQuali mercati vuoi analizzare?\n")
+
+    for numero, mercato in MERCATI.items():
+        print(f"  {numero}. {mercato['nome']}")
+
+    print(f"  {len(MERCATI) + 1}. Tutti")
+
+    while True:
+        scelta = input("\nInserisci uno o più numeri separati da una virgola: ")
+        numeri = [numero.strip() for numero in scelta.split(",")]
+
+        opzione_tutti = str(len(MERCATI) + 1)
+
+        if opzione_tutti in numeri:
+            return [mercato["simbolo"] for mercato in MERCATI.values()]
+
+        if numeri and all(numero in MERCATI for numero in numeri):
+            simboli = [MERCATI[numero]["simbolo"] for numero in numeri]
+
+            # dict.fromkeys elimina eventuali duplicati mantenendo l'ordine.
+            return list(dict.fromkeys(simboli))
+
+        print("Scelta non valida. Riprova usando i numeri mostrati nel menu.")
+
+
+def descrivi_vix(vix: float) -> str:
+
+    if vix >= 30:
+        return "volatilità elevata"
+    if vix >= 20:
+        return "volatilità moderata"
+    return "volatilità contenuta"
+
+
+def stampa_report(dati: dict, segnali: list[dict]) -> None:
+    """Stampa prezzi, indicatori e segnali nel terminale."""
+
+    ora_attuale = datetime.now().strftime("%d/%m/%Y %H:%M")
     vix = dati.get("vix")
 
-    # ── 1. Intestazione ────────────────────────────────────────────────────────
-    print()
-    print(f"{GRASSETTO}{'═' * 52}{RESET}")
-    print(f"{GRASSETTO}  DAILY FINANCIAL REPORT  —  {ora_attuale}{RESET}")
-    if vix:
-        # VIX basso = mercato tranquillo, VIX alto = mercato in paura
-        livello_vix = "ELEVATO ⚠" if vix > 25 else "nella norma"
-        print(f"  VIX: {GRASSETTO}{vix:.1f}{RESET}  ({livello_vix})")
-    print(f"{GRASSETTO}{'═' * 52}{RESET}")
+    print(f"\n{GRASSETTO}{'=' * 58}{RESET}")
+    print(f"{GRASSETTO}DAILY FINANCIAL REPORT - {ora_attuale}{RESET}")
 
-    # ── 2. Tabella prezzi ──────────────────────────────────────────────────────
-    print(f"\n{GRASSETTO}MERCATI{RESET}")
-    print(f"{'─' * 48}")
+    if vix is not None:
+        descrizione = descrivi_vix(vix)
+        print(f"VIX: {vix:.1f} ({descrizione})")
+
+        if vix >= 30:
+            print(
+                f"{GIALLO}Attenzione: il mercato presenta "
+                f"una volatilità elevata.{RESET}"
+            )
+
+    print(f"{GRASSETTO}{'=' * 58}{RESET}")
+
+    print(f"\n{GRASSETTO}PREZZI DI MERCATO{RESET}")
+    print("-" * 58)
 
     prezzi = dati.get("prezzi", {})
-    for simbolo, q in prezzi.items():
-        nome  = q.get("nome", simbolo)
-        prz   = q.get("prezzo")
-        pct   = q.get("variazione_pct")
 
-        if prz is None:
+    for quotazione in prezzi.values():
+        nome = quotazione["nome"]
+        prezzo = quotazione.get("prezzo")
+        variazione_pct = quotazione.get("variazione_pct")
+
+        if prezzo is None:
             continue
 
-        # Colora il valore positivo in verde, negativo in rosso
-        if pct is not None and pct > 0:
-            colore_pct = VERDE
-            segno = "+"
-        elif pct is not None and pct < 0:
-            colore_pct = ROSSO
-            segno = ""
+        if variazione_pct is None:
+            variazione_testo = f"{GRIGIO}N/D{RESET}"
+        elif variazione_pct > 0:
+            variazione_testo = (
+                f"{VERDE}+{variazione_pct:.2f}%{RESET}"
+            )
+        elif variazione_pct < 0:
+            variazione_testo = (
+                f"{ROSSO}{variazione_pct:.2f}%{RESET}"
+            )
         else:
-            colore_pct = GRIGIO
-            segno = ""
+            variazione_testo = f"{GRIGIO}0.00%{RESET}"
 
-        pct_str = f"{colore_pct}{segno}{pct:.2f}%{RESET}" if pct is not None else f"{GRIGIO}N/D{RESET}"
+        print(f"{nome:<22} {prezzo:>12,.2f}   {variazione_testo}")
 
-        # Formattazione colonne: nome (18 char), prezzo (12 char), variazione%
-        print(f"  {nome:<18} {prz:>10,.2f}   {pct_str}")
+    print(f"\n{GRASSETTO}ANALISI TECNICA{RESET}")
+    print("-" * 58)
 
-    # ── 3. Segnali ─────────────────────────────────────────────────────────────
-    print(f"\n{GRASSETTO}SEGNALI DI INVESTIMENTO{RESET}")
-    print(f"{'─' * 48}")
+    for segnale in segnali:
+        azione = segnale["azione"]
+        colore = COLORI_SEGNALI.get(azione, RESET)
 
-    for sig in segnali:
-        azione  = sig["azione"]
-        colore  = COLORE_AZIONE.get(azione, RESET)
-        badge   = f"{colore}{GRASSETTO}[ {azione:<4} ]{RESET}"  # es. "[ BUY  ]"
+        print(
+            f"{colore}{GRASSETTO}[{azione}]{RESET} "
+            f"{GRASSETTO}{segnale['nome']}{RESET}"
+        )
+        print(f"  {segnale['motivo']}")
 
-        print(f"  {badge}  {GRASSETTO}{sig['nome']}{RESET}")
-        print(f"           {sig['motivo']}")
+        rsi = segnale.get("rsi")
+        distanza_sma = segnale.get("pct_vs_sma20")
 
-        # Mostra i valori numerici degli indicatori se disponibili
-        rsi = sig.get("rsi")
-        pct = sig.get("pct_vs_sma20")
-        if rsi is not None and pct is not None:
-            print(f"           {GRIGIO}RSI: {rsi:.0f}   vs SMA20: {pct:+.1f}%{RESET}")
+        if rsi is not None and distanza_sma is not None:
+            print(
+                f"  {GRIGIO}RSI: {rsi:.1f} | "
+                f"distanza dalla SMA20: {distanza_sma:+.2f}%{RESET}"
+            )
+
         print()
 
-    # ── 4. Disclaimer ──────────────────────────────────────────────────────────
-    print(f"{'─' * 48}")
-    print(f"{GRIGIO}Dati: Yahoo Finance. Non costituisce consulenza finanziaria.{RESET}")
-    print(f"{'═' * 52}\n")
+    print("-" * 58)
+    print(
+        f"{GRIGIO}Dati forniti da Yahoo Finance. "
+        f"Il report ha esclusivamente finalità didattiche.{RESET}\n"
+    )
 
 
 def main() -> None:
-    """Esegue il flusso completo: scarica → calcola → stampa."""
-    # Passo 1: scarica tutti i dati da Yahoo Finance
-    dati = get_dati_mercato()
+    """Coordina le operazioni principali del programma."""
 
-    # Passo 2: calcola i segnali BUY/SELL/HOLD
+    simboli_scelti = scegli_mercati()
+    dati = get_dati_mercato(simboli_scelti)
     segnali = genera_segnali(dati)
 
-    # Passo 3: stampa il report
     stampa_report(dati, segnali)
 
 
-# Questo blocco garantisce che main() venga chiamata solo se esegui
-# direttamente "python main.py", e non se importi questo modulo da un altro file.
 if __name__ == "__main__":
     main()
