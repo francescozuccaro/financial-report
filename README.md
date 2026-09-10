@@ -87,14 +87,20 @@ financial-report/
 ├── main.py
 ├── fetcher.py
 ├── signals.py
+├── test_signals.py
 ├── requirements.txt
+├── .gitignore
+├── LICENSE
 └── README.md
 ```
 
 - `main.py`: handles user interaction and prints the report
 - `fetcher.py`: downloads market data and calculates SMA20 and RSI
 - `signals.py`: generates technical indications
+- `test_signals.py`: tests the signal logic
 - `requirements.txt`: lists the external Python packages
+- `.gitignore`: excludes local and generated files
+- `LICENSE`: contains the MIT license
 
 ## Installation
 
@@ -134,13 +140,13 @@ python main.py
 The program will display an interactive menu:
 
 ```text
-Which markets do you want to analyze?
+Quali mercati vuoi analizzare?
 
 1. S&P 500
 2. NASDAQ
 3. Dow Jones
-4. Emerging markets
-5. All
+4. Mercati emergenti
+5. Tutti
 ```
 
 One or more markets can be selected by entering numbers separated by commas.
@@ -150,6 +156,23 @@ Example:
 ```text
 1,2,4
 ```
+
+## Tests
+
+The signal logic can be tested without downloading market data.
+
+Run all tests with:
+
+```bash
+python -m unittest
+```
+
+The test suite verifies:
+
+- BUY conditions
+- SELL conditions
+- HOLD conditions
+- missing market data handling
 
 ## Technologies
 
